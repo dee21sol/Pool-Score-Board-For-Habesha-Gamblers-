@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billiard Scoreboard BY DEEVINE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .ball-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 1px;
+            font-size: 0.8rem;
+        }
+        .ball-btn:disabled {
+            opacity: 0.3;
+            filter: blur(1px);
+        }
+        .action-btn {
+            padding: 0.25rem;
+            font-size: 0.8rem;
+            width: 60px;
+        }
+        .player-card {
+            min-width: 120px;
+            max-width: 150px;
+            height: 120px;
+            transition: all 0.2s;
+        }
+        .current-player {
+            border: 2px solid #3b82f6;
+        }
+        .eliminated {
+            opacity: 0.5;
+        }
+        .ball-actions {
+            display: none;
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        .ball-container:hover .ball-actions {
+            display: flex;
+        }
+        .compact-balls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+        }
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-4">
+        <h1 class="text-xl font-bold text-center mb-4">Pool Scoreboard BY DEEVINE</h1>
+        
+        <!-- Game Controls -->
+        <div class="flex justify-between mb-2">
+            <button id="nextPlayer" class="action-btn bg-blue-600 hover:bg-blue-700 rounded">Next Player</button>
+            <button id="newGame" class="action-btn bg-gray-600 hover:bg-gray-700 rounded">New Game</button>
+            <button id="undoBtn" class="action-btn bg-red-600 hover:bg-yellow-700 rounded">Undo</button>
+            <button id="redoBtn" class="action-btn bg-red-600 hover:bg-yellow-700 rounded">Redo</button>
+            <button id="toggleDataPageBtn" class="action-btn bg-purple-600 hover:bg-purple-700 rounded">Stat</button>
+        </div>
+        
+        <!-- Game Interface -->
+        <div id="gameInterface" class="hidden">
+            <!-- Players Scoreboard -->
+            <div id="playersScoreboard" class="player-grid gap-2 mb-4"></div>
+            
+            <!-- Ball Number Pad -->
+            <div class="bg-gray-800 p-2 rounded-lg mb-4">
+                <h2 class="text-lg font-semibold mb-2">Remaining Balls: <span id="remainingBallsSum">120</span></h2>
+                <div class="compact-balls">
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-red-600 hover:bg-red-700" value="3">3</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(3, 'pocket')">+6</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(3, 'foul')">-4</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-yellow-600 hover:bg-yellow-700" value="4">4</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(4, 'pocket')">+4</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(4, 'foul')">-4</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-blue-600 hover:bg-blue-700" value="5">5</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(5, 'pocket')">+5</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(5, 'foul')">-5</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-purple-600 hover:bg-purple-700" value="6">6</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(6, 'pocket')">+6</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(6, 'foul')">-6</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-orange-600 hover:bg-orange-700" value="7">7</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(7, 'pocket')">+7</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(7, 'foul')">-7</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-black text-white hover:bg-gray-800" value="8">8</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(8, 'pocket')">+8</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(8, 'foul')">-8</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-yellow-400 hover:bg-yellow-500 text-black" value="9">9</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(9, 'pocket')">+9</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(9, 'foul')">-9</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-blue-400 hover:bg-blue-500" value="10">10</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(10, 'pocket')">+10</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(10, 'foul')">-10</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-red-400 hover:bg-red-500" value="11">11</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(11, 'pocket')">+11</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(11, 'foul')">-11</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-purple-400 hover:bg-purple-500" value="12">12</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(12, 'pocket')">+12</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(12, 'foul')">-12</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-orange-400 hover:bg-orange-500" value="13">13</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(13, 'pocket')">+13</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(13, 'foul')">-13</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-green-500 hover:bg-green-600" value="14">14</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(14, 'pocket')">+14</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(14, 'foul')">-14</button>
+                        </div>
+                    </div>
+                    <div class="relative ball-container">
+                        <button class="ball-btn bg-red-500 hover:bg-red-600" value="15">15</button>
+                        <div class="ball-actions">
+                            <button class="action-btn bg-green-600 hover:bg-green-700 rounded" onclick="handleBallAction(15, 'pocket')">+15</button>
+                            <button class="action-btn bg-red-600 hover:bg-red-700 rounded" onclick="handleBallAction(15, 'foul')">-15</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Player Setup -->
+        <div id="playerSetup" class="bg-gray-800 p-4 rounded-lg">
+            <h2 class="text-lg font-semibold mb-3">Game Setup</h2>
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button id="2players" class="bg-blue-600 hover:bg-blue-700 py-2 rounded">2 Players</button>
+                <button id="3players" class="bg-blue-600 hover:bg-blue-700 py-2 rounded">3 Players</button>
+                <button id="4players" class="bg-blue-600 hover:bg-blue-700 py-2 rounded">4 Players</button>
+            </div>
+            
+            <div id="playerInputs" class="hidden">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block mb-1">Player 1 Name</label>
+                        <input type="text" id="player1" class="w-full p-2 rounded bg-gray-700 text-white">
+                    </div>
+                    <div>
+                        <label class="block mb-1">Player 2 Name</label>
+                        <input type="text" id="player2" class="w-full p-2 rounded bg-gray-700 text-white">
+                    </div>
+                    <div id="player3Container" class="hidden">
+                        <label class="block mb-1">Player 3 Name</label>
+                        <input type="text" id="player3" class="w-full p-2 rounded bg-gray-700 text-white">
+                    </div>
+                    <div id="player4Container" class="hidden">
+                        <label class="block mb-1">Player 4 Name</label>
+                        <input type="text" id="player4" class="w-full p-2 rounded bg-gray-700 text-white">
+                    </div>
+                </div>
+                <button id="startGame" class="w-full bg-green-600 hover:bg-green-700 py-2 rounded">Start Game</button>
+            </div>
+        </div>
+
+        <!-- Data Collection Page -->
+        <div id="dataCollectionPage" class="hidden bg-gray-800 p-4 rounded-lg">
+            <h2 class="text-lg font-semibold mb-3">Game Data Collection</h2>
+            <table class="w-full bg-gray-700 rounded">
+                <thead>
+                    <tr>
+                        <th class="p-2 text-left">Player Names</th>
+                        <th class="p-2 text-left">Wins</th>
+                        <th class="p-2 text-left">Losses</th>
+                    </tr>
+                </thead>
+                <tbody id="dataCollectionContent"></tbody>
+            </table>
+            <button id="resetDataBtn" class="w-full bg-red-600 hover:bg-red-700 py-2 rounded mt-4">Reset Data</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            players: [],
+            currentPlayerIndex: 0,
+            remainingBalls: [3,4,5,6,7,8,9,10,11,12,13,14,15],
+            ball3OnTable: true,
+            gameStarted: false,
+            history: [],
+            historyIndex: -1,
+            dataCollection: []
+        };
+
+        // Add this at the top with gameState
+        const playerStats = {};
+
+        // DOM elements
+        const playerSetup = document.getElementById('playerSetup');
+        const gameInterface = document.getElementById('gameInterface');
+        const playersScoreboard = document.getElementById('playersScoreboard');
+        const remainingBallsSum = document.getElementById('remainingBallsSum');
+        const ballButtons = document.querySelectorAll('.ball-btn');
+        const nextPlayerBtn = document.getElementById('nextPlayer');
+        const newGameBtn = document.getElementById('newGame');
+        const startGameBtn = document.getElementById('startGame');
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        const toggleDataPageBtn = document.getElementById('toggleDataPageBtn');
+        const dataCollectionPage = document.getElementById('dataCollectionPage');
+        const dataCollectionContent = document.getElementById('dataCollectionContent');
+        const resetDataBtn = document.getElementById('resetDataBtn');
+
+        // Initialize
+        document.getElementById('2players').addEventListener('click', () => setupPlayers(2));
+        document.getElementById('3players').addEventListener('click', () => setupPlayers(3));
+        document.getElementById('4players').addEventListener('click', () => setupPlayers(4));
+        startGameBtn.addEventListener('click', startGame);
+        nextPlayerBtn.addEventListener('click', nextPlayer);
+        newGameBtn.addEventListener('click', resetGame);
+        undoBtn.addEventListener('click', undo);
+        redoBtn.addEventListener('click', redo);
+        resetDataBtn.addEventListener('click', resetDataCollection);
+        toggleDataPageBtn.addEventListener('click', toggleDataPage);
+
+        function setupPlayers(count) {
+            document.getElementById('player3Container').classList.toggle('hidden', count < 3);
+            document.getElementById('player4Container').classList.toggle('hidden', count < 4);
+            document.getElementById('playerInputs').classList.remove('hidden');
+            gameState.playerCount = count;
+        }
+
+        function startGame() {
+            gameState.players = [];
+            for (let i = 1; i <= gameState.playerCount; i++) {
+                const name = document.getElementById(`player${i}`).value.trim() || `Player ${i}`;
+                gameState.players.push({
+                    name,
+                    score: 0,
+                    ballsPocketed: [],
+                    ballsFouled: [],
+                    eliminated: false,
+                    pointsNeeded: 0
+                });
+            }
+            
+            gameState.gameStarted = true;
+            gameState.currentPlayerIndex = 0;
+            gameState.remainingBalls = [3,4,5,6,7,8,9,10,11,12,13,14,15];
+            gameState.ball3OnTable = true;
+            gameState.history = [];
+            gameState.historyIndex = -1;
+            
+            playerSetup.classList.add('hidden');
+            gameInterface.classList.remove('hidden');
+            updateScoreboard();
+            updateBallButtons();
+        }
+
+        function updateScoreboard() {
+            playersScoreboard.innerHTML = '';
+            const highestScore = Math.max(...gameState.players.map(p => p.score));
+            
+            gameState.players.forEach((player, index) => {
+                // Calculate points needed to win
+                const pointsNeeded = Math.max(0, highestScore - player.score);
+                player.pointsNeeded = pointsNeeded;
+                
+                // Check if player can't reach highest score
+                const remainingBallsValue = gameState.remainingBalls.reduce((sum, ball) => {
+                    return sum + (ball === 3 ? 6 : ball);
+                }, 0);
+                
+                if (player.score < highestScore && remainingBallsValue < pointsNeeded) {
+                    player.eliminated = true;
+                }
+                
+                const playerCard = document.createElement('div');
+                playerCard.className = `player-card bg-gray-800 p-2 rounded-lg ${index === gameState.currentPlayerIndex ? 'current-player' : ''} ${player.eliminated ? 'eliminated' : ''}`;
+                playerCard.innerHTML = `
+                    <div class="player-name" data-index="${index}">
+                        <h3 class="text-sm font-semibold ${player.score === highestScore && !player.eliminated ? 'text-green-400' : ''}">
+                            ${player.name} ${player.eliminated ? '(Eliminated)' : ''}
+                        </h3>
+                    </div>
+                    <div class="text-xl font-bold my-1">${player.score} pts</div>
+                    <div class="text-xs ${player.pointsNeeded > 0 ? 'text-yellow-400' : 'text-green-400'}">
+                        ${player.pointsNeeded > 0 ? `Needs ${player.pointsNeeded} points to win` : 'Winning!'}
+                    </div>
+                    <div class="text-xs mt-1">
+                        <div>Pocketed: ${player.ballsPocketed.join(', ') || 'None'}</div>
+                        <div>Fouled: ${player.ballsFouled.join(', ') || 'None'}</div>
+                    </div>
+                `;
+                
+                // Add click event to player name to change turn
+                playerCard.querySelector('.player-name').addEventListener('click', () => {
+                    if (!player.eliminated) {
+                        gameState.currentPlayerIndex = index;
+                        updateScoreboard();
+                    }
+                });
+                
+                playersScoreboard.appendChild(playerCard);
+            });
+            
+            // Update remaining balls sum
+            remainingBallsSum.textContent = gameState.remainingBalls.reduce((sum, ball) => sum + (ball === 3 ? 6 : ball), 0);
+        }
+
+        function updateBallButtons() {
+            ballButtons.forEach(btn => {
+                const ballValue = parseInt(btn.value);
+                btn.disabled = !gameState.remainingBalls.includes(ballValue);
+            });
+        }
+
+        function handleBallAction(ball, action) {
+            const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+            const ballIndex = gameState.remainingBalls.indexOf(ball);
+            
+            if (ballIndex === -1) {
+                alert('This ball has already been pocketed');
+                return;
+            }
+            
+            let points = 0;
+            
+            if (ball === 3) {
+                if (action === 'pocket') {
+                    points = 6;
+                    currentPlayer.ballsPocketed.push(3);
+                    gameState.ball3OnTable = false;
+                } else {
+                    points = -4;
+                    currentPlayer.ballsFouled.push(3);
+                }
+            } else {
+                if (action === 'pocket') {
+                    points = ball;
+                    currentPlayer.ballsPocketed.push(ball);
+                } else {
+                    // Special rule: -4 points for any foul when ball 3 is still on table
+                    points = gameState.ball3OnTable ? -4 : -ball;
+                    currentPlayer.ballsFouled.push(ball);
+                }
+            }
+            
+            currentPlayer.score += points;
+            
+            if (action === 'pocket') {
+                gameState.remainingBalls.splice(ballIndex, 1);
+            }
+            
+            // Save state to history
+            saveStateToHistory();
+            
+            updateScoreboard();
+            updateBallButtons();
+        }
+
+        function nextPlayer() {
+            do {
+                gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+            } while (gameState.players[gameState.currentPlayerIndex].eliminated && 
+                    gameState.players.some(p => !p.eliminated));
+            
+            // Save state to history
+            saveStateToHistory();
+            
+            updateScoreboard();
+        }
+
+        function resetGame() {
+            if (gameState.gameStarted) {
+                endGame();
+            }
+            gameState.players = [];
+            gameState.currentPlayerIndex = 0;
+            gameState.remainingBalls = [3,4,5,6,7,8,9,10,11,12,13,14,15];
+            gameState.ball3OnTable = true;
+            gameState.gameStarted = false;
+            gameState.history = [];
+            gameState.historyIndex = -1;
+            
+            gameInterface.classList.add('hidden');
+            playerSetup.classList.remove('hidden');
+            document.getElementById('playerInputs').classList.add('hidden');
+            document.querySelectorAll('#playerInputs input').forEach(input => input.value = '');
+            dataCollectionPage.classList.add('hidden');
+            updateBallButtons();
+        }
+
+        function saveStateToHistory() {
+            // Remove any future states if we're not at the end of the history
+            if (gameState.historyIndex < gameState.history.length - 1) {
+                gameState.history = gameState.history.slice(0, gameState.historyIndex + 1);
+            }
+            
+            // Save current state
+            const stateCopy = JSON.parse(JSON.stringify(gameState));
+            gameState.history.push(stateCopy);
+            gameState.historyIndex = gameState.history.length - 1;
+        }
+
+        function undo() {
+            if (gameState.historyIndex > 0) {
+                gameState.historyIndex--;
+                const previousState = gameState.history[gameState.historyIndex];
+                Object.assign(gameState, previousState);
+                updateScoreboard();
+                updateBallButtons();
+            }
+        }
+
+        function redo() {
+            if (gameState.historyIndex < gameState.history.length - 1) {
+                gameState.historyIndex++;
+                const nextState = gameState.history[gameState.historyIndex];
+                Object.assign(gameState, nextState);
+                updateScoreboard();
+                updateBallButtons();
+            }
+        }
+
+        function collectData() {
+            const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+            const firstPlayer = sortedPlayers[0];
+            const lastPlayer = sortedPlayers[sortedPlayers.length - 1];
+            
+            gameState.dataCollection.push({
+                first: firstPlayer.name,
+                last: lastPlayer.name,
+                timestamp: new Date().toISOString()
+            });
+            
+            updateDataCollectionPage();
+        }
+
+        function updateDataCollectionPage() {
+            dataCollectionContent.innerHTML = '';
+            Object.keys(playerStats).forEach(name => {
+                // Only show players with at least one win or one loss
+                if (playerStats[name].wins > 0 || playerStats[name].losses > 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="p-2">${name}</td>
+                        <td class="p-2">${playerStats[name].wins}</td>
+                        <td class="p-2">${playerStats[name].losses}</td>
+                    `;
+                    dataCollectionContent.appendChild(row);
+                }
+            });
+        }
+
+        function resetDataCollection() {
+            for (const key in playerStats) delete playerStats[key];
+            updateDataCollectionPage();
+        }
+
+        function toggleDataPage() {
+            if (gameInterface.classList.contains('hidden')) {
+                gameInterface.classList.remove('hidden');
+                dataCollectionPage.classList.add('hidden');
+            } else {
+                gameInterface.classList.add('hidden');
+                dataCollectionPage.classList.remove('hidden');
+            }
+        }
+
+        // Update endGame to increment wins/losses in playerStats
+        function endGame() {
+            // Find winner (highest score) and last (lowest score)
+            if (gameState.players.length === 0) return;
+            const sorted = [...gameState.players].sort((a, b) => b.score - a.score);
+            const winner = sorted[0];
+            const last = sorted[sorted.length - 1];
+
+            // Update stats for winner
+            if (!playerStats[winner.name]) playerStats[winner.name] = { wins: 0, losses: 0 };
+            playerStats[winner.name].wins += 1;
+
+            // Update stats for last
+            if (!playerStats[last.name]) playerStats[last.name] = { wins: 0, losses: 0 };
+            playerStats[last.name].losses += 1;
+
+            updateDataCollectionPage();
+            gameInterface.classList.add('hidden');
+            dataCollectionPage.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
